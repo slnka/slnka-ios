@@ -12,11 +12,11 @@ Add the package to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/slnk-ma/slnka-ios.git", from: "1.0.0-beta.1")
+    .package(url: "https://github.com/slnka/slnka-ios.git", from: "1.0.0-beta.1")
 ]
 ```
 
-Or in Xcode: **File > Add Package Dependencies** and enter `https://github.com/slnk-ma/slnka-ios`.
+Or in Xcode: **File > Add Package Dependencies** and enter `https://github.com/slnka/slnka-ios`.
 
 > **Note**: This is a private repository. You may need to authenticate via Xcode > Settings > Accounts > GitHub, or add credentials to `~/.netrc`:
 > ```
