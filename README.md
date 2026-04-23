@@ -68,8 +68,3 @@ SLNK documentation bundle.
 | Version | Date | Notes |
 |---------|------|-------|
 | 1.0.0-beta.4 | TBD | Initial binary release of SlnkaSDK (new API) |
-
-## Support
-
-- Dashboard: https://dashboard.slnk.ma
-- Email: sdk@slnka.ma
