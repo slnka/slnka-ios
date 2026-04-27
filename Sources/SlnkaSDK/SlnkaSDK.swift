@@ -8,10 +8,10 @@ import UIKit
 /// Usage:
 /// ```swift
 /// // 1. Configure in App.init() or AppDelegate:
-/// SlnkaSDK.configure(apiKey: "lsk_live_your_key_here", config: SlnkaConfig(serverUrl: "https://api.slnk.ma"))
+/// Slnka.configure(apiKey: "lsk_live_your_key_here", config: SlnkaConfig(serverUrl: "https://api.slnk.ma"))
 ///
 /// // 2. Register ONE callback for ALL deep links (direct + deferred):
-/// SlnkaSDK.onDeepLink { deepLink in
+/// Slnka.onDeepLink { deepLink in
 ///     // deepLink.screen = "/payment"
 ///     // deepLink.isDeferred = true/false
 ///     // deepLink.params = [...]
@@ -19,24 +19,24 @@ import UIKit
 /// }
 ///
 /// // 3. In SwiftUI .onOpenURL:
-/// SlnkaSDK.handleURL(url)
+/// Slnka.handleURL(url)
 ///
 /// // 4. In .onContinueUserActivity:
-/// SlnkaSDK.handleUserActivity(userActivity)
+/// Slnka.handleUserActivity(userActivity)
 ///
 /// // Track events:
-/// SlnkaSDK.shared.track(event: "purchase_completed", properties: ["amount": 99.99])
+/// Slnka.shared.track(event: "purchase_completed", properties: ["amount": 99.99])
 ///
 /// // Identify user:
-/// SlnkaSDK.shared.identify(userId: "user_123", traits: ["name": "Ahmed", "plan": "pro"])
+/// Slnka.shared.identify(userId: "user_123", traits: ["name": "Ahmed", "plan": "pro"])
 ///
 /// // On logout:
-/// SlnkaSDK.shared.reset()
+/// Slnka.shared.reset()
 /// ```
-public final class SlnkaSDK {
+public final class Slnka {
 
     /// Shared singleton instance.
-    public static let shared = SlnkaSDK()
+    public static let shared = Slnka()
 
     // MARK: - Internal Components
 
@@ -125,7 +125,7 @@ public final class SlnkaSDK {
         // EventTracker and benefits from consent gating downstream. `shared`
         // is a long-lived singleton, so a strong capture is fine.
         EngagementTracker.shared.configure { eventName, properties in
-            SlnkaSDK.shared.track(event: eventName, properties: properties)
+            Slnka.shared.track(event: eventName, properties: properties)
         }
 
         // Register for app lifecycle notifications
@@ -146,7 +146,7 @@ public final class SlnkaSDK {
     ///   a deep link is detected (direct or deferred).
     ///
     /// ```swift
-    /// SlnkaSDK.onDeepLink { deepLink in
+    /// Slnka.onDeepLink { deepLink in
     ///     print("Screen: \(deepLink.screen ?? "none")")
     ///     print("Deferred: \(deepLink.isDeferred)")
     ///     navigateTo(deepLink.screen)
@@ -265,7 +265,7 @@ public final class SlnkaSDK {
     /// - Parameters:
     ///   - userActivity: The `NSUserActivity` from the system callback.
     ///   - completion: Called on the main thread with the resolved `DeepLink` or an error.
-    @available(*, deprecated, message: "Use SlnkaSDK.onDeepLink(_:) + SlnkaSDK.handleUserActivity(_:) instead")
+    @available(*, deprecated, message: "Use Slnka.onDeepLink(_:) + Slnka.handleUserActivity(_:) instead")
     public func handleUniversalLink(
         _ userActivity: NSUserActivity,
         completion: @escaping (Result<DeepLink, SlnkaError>) -> Void
@@ -289,7 +289,7 @@ public final class SlnkaSDK {
     }
 
     /// Async variant of `handleUniversalLink`.
-    @available(iOS, introduced: 15.0, deprecated: 100000, message: "Use SlnkaSDK.onDeepLink(_:) + SlnkaSDK.handleUserActivity(_:) instead")
+    @available(iOS, introduced: 15.0, deprecated: 100000, message: "Use Slnka.onDeepLink(_:) + Slnka.handleUserActivity(_:) instead")
     public func handleUniversalLink(_ userActivity: NSUserActivity) async throws -> DeepLink {
         guard isConfigured else { throw SlnkaError.notConfigured }
 
@@ -306,7 +306,7 @@ public final class SlnkaSDK {
     }
 
     /// Handles a URL directly (e.g., from a custom URL scheme or `openURL`).
-    @available(*, deprecated, message: "Use SlnkaSDK.onDeepLink(_:) + SlnkaSDK.handleURL(_:) instead")
+    @available(*, deprecated, message: "Use Slnka.onDeepLink(_:) + Slnka.handleURL(_:) instead")
     public func handleURL(
         _ url: URL,
         completion: @escaping (Result<DeepLink, SlnkaError>) -> Void
@@ -335,7 +335,7 @@ public final class SlnkaSDK {
     /// This will only run once per install. Subsequent calls return `nil`.
     ///
     /// - Parameter completion: Called on the main thread with the resolved `DeepLink` or `nil`.
-    @available(*, deprecated, message: "Use SlnkaSDK.onDeepLink(_:) instead — deferred deep links are checked automatically")
+    @available(*, deprecated, message: "Use Slnka.onDeepLink(_:) instead — deferred deep links are checked automatically")
     public func checkDeferredDeepLink(completion: @escaping (DeepLink?) -> Void) {
         guard isConfigured else {
             logDebug("SDK not configured, skipping deferred deep link check")
@@ -356,7 +356,7 @@ public final class SlnkaSDK {
     }
 
     /// Async variant of `checkDeferredDeepLink`.
-    @available(iOS, introduced: 15.0, deprecated: 100000, message: "Use SlnkaSDK.onDeepLink(_:) instead — deferred deep links are checked automatically")
+    @available(iOS, introduced: 15.0, deprecated: 100000, message: "Use Slnka.onDeepLink(_:) instead — deferred deep links are checked automatically")
     public func checkDeferredDeepLink() async -> DeepLink? {
         guard isConfigured else {
             logDebug("SDK not configured, skipping deferred deep link check")
@@ -409,16 +409,6 @@ public final class SlnkaSDK {
         eventTracker?.reset()
     }
 
-    /// Associates the current user with a group (workspace, organization, etc.).
-    ///
-    /// - Parameters:
-    ///   - groupId: The group identifier.
-    ///   - traits: Optional group traits (name, plan, etc.).
-    public func group(groupId: String, traits: [String: Any] = [:]) {
-        guard isConfigured else { return }
-        eventTracker?.group(groupId: groupId, traits: traits)
-    }
-
     /// Creates an alias mapping a new user ID to a previous one.
     ///
     /// - Parameters:
@@ -454,7 +444,7 @@ public final class SlnkaSDK {
     /// ```swift
     /// override func viewDidAppear(_ animated: Bool) {
     ///     super.viewDidAppear(animated)
-    ///     SlnkaSDK.shared.trackScreen("/home")
+    ///     Slnka.shared.trackScreen("/home")
     /// }
     /// ```
     ///

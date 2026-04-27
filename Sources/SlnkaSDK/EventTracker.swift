@@ -118,24 +118,6 @@ final class EventTracker {
         eventQueue.enqueue(event)
     }
 
-    // MARK: - Group
-
-    func group(groupId: String, traits: [String: Any] = [:]) {
-        guard storage.isConsentGranted() else { return }
-        ensureSession()
-
-        var properties: [String: Any] = traits
-        properties["$group_id"] = groupId
-
-        let event = buildEvent(
-            eventName: "$group",
-            properties: properties
-        )
-
-        logDebug("Group: \(groupId)")
-        eventQueue.enqueue(event)
-    }
-
     // MARK: - Alias
 
     func alias(newId: String, previousId: String? = nil) {
