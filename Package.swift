@@ -5,7 +5,7 @@ let package = Package(
     name: "SlnkaSDK",
     platforms: [.iOS(.v15), .macOS(.v13)],
     products: [
-        .library(name: "SlnkaSDK", targets: ["SlnkaSDK"]),
+        .library(name: "SlnkaSDK", type: .dynamic, targets: ["SlnkaSDK"]),
     ],
     targets: [
         .target(name: "SlnkaSDK", dependencies: []),

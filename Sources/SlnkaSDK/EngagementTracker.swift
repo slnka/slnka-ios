@@ -22,7 +22,7 @@ import UIKit
 /// - Pause on `UIApplication.willResignActiveNotification` (app about to
 ///   lose focus — app switcher, control center, incoming call, backgrounding).
 /// - Resume on `UIApplication.didBecomeActiveNotification`.
-/// - No method swizzling: developers must call `SlnkaSDK.shared.trackScreen(_:)`
+/// - No method swizzling: developers must call `Slnka.shared.trackScreen(_:)`
 ///   explicitly in `viewDidAppear(_:)`. This is App-Store-safe and leaves full
 ///   control to the integrator (see design doc §4 D3).
 /// - Bounce filter: screens viewed for less than 500 ms are discarded
@@ -35,7 +35,7 @@ import UIKit
 /// Thread-safety: all public methods are serialized on an internal lock.
 final class EngagementTracker {
 
-    /// Shared singleton used by `SlnkaSDK.shared`.
+    /// Shared singleton used by `Slnka.shared`.
     static let shared = EngagementTracker()
 
     private let lock = NSLock()
@@ -72,7 +72,7 @@ final class EngagementTracker {
     // MARK: - Configuration
 
     /// Wires the tracker to the SDK and registers UIApplication notification
-    /// observers. Must be called once from `SlnkaSDK.configure`.
+    /// observers. Must be called once from `Slnka.configure`.
     ///
     /// - Parameter track: Closure invoked to emit an event. Receives the
     ///   event name and properties; it must forward to `EventTracker.track`

@@ -4,7 +4,7 @@ import Foundation
 
 /// All errors that can be thrown by the SLNK SDK.
 public enum SlnkaError: Error, CustomStringConvertible {
-    /// SDK has not been configured. Call `SlnkaSDK.configure(apiKey:config:)` first.
+    /// SDK has not been configured. Call `Slnka.configure(apiKey:config:)` first.
     case notConfigured
     /// A network request failed.
     case networkError(underlying: Error)
@@ -24,7 +24,7 @@ public enum SlnkaError: Error, CustomStringConvertible {
     public var description: String {
         switch self {
         case .notConfigured:
-            return "SlnkaSDK is not configured. Call SlnkaSDK.configure(apiKey:config:) first."
+            return "SlnkaSDK is not configured. Call Slnka.configure(apiKey:config:) first."
         case .networkError(let error):
             return "Network error: \(error.localizedDescription)"
         case .invalidResponse(let code, let body):

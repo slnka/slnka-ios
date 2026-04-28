@@ -46,7 +46,7 @@ public class SlnkaSurveyViewController: UIViewController {
         modalPresentationStyle = .pageSheet
         if let sheet = sheetPresentationController {
             sheet.detents = [.medium()]
-            sheet.prefersGrabberHandle = true
+            sheet.prefersGrabberVisible = true
         }
     }
 
