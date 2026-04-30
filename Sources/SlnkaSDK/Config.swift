@@ -41,7 +41,7 @@ public struct SlnkaConfig: Sendable {
     public let debug: Bool
 
     /// SDK version string, sent as context metadata.
-    public static let sdkVersion = "1.0.0-beta.4"
+    public static let sdkVersion = "1.0.0-beta.5"
 
     /// Platform identifier sent to the server.
     public static let platform = "ios"

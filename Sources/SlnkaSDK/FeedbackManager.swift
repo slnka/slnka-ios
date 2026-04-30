@@ -40,7 +40,7 @@ final class FeedbackManager {
 
     // MARK: - Single Feedback Response
 
-    /// Submits a single feedback response to POST /api/v1/feedback/responses.
+    /// Submits a single feedback response to POST /api/v1/sdk/feedback/responses.
     func submitResponse(
         promptType: String,
         question: String,

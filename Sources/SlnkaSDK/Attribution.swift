@@ -115,7 +115,7 @@ final class Attribution {
 
     /// Records a conversion event for multi-touch attribution.
     ///
-    /// Sends the conversion to `POST /api/v1/analytics/attribution/conversion`
+    /// Sends the conversion to `POST /api/v1/sdk/attribution/conversion`
     /// so that the backend can distribute credit across touchpoints.
     ///
     /// - Parameters:

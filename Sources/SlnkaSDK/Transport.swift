@@ -25,15 +25,15 @@ final class Transport {
 
     // MARK: - Event Ingestion
 
-    /// Sends a single event to POST /api/v1/analytics/events
+    /// Sends a single event to POST /api/v1/sdk/events
     func sendEvent(_ event: SlnkaEvent, workspaceId: String? = nil) async throws -> TransportResponse {
-        let url = "\(baseURL)/api/v1/analytics/events"
+        let url = "\(baseURL)/api/v1/sdk/events"
         return try await post(url: url, body: event, workspaceId: workspaceId)
     }
 
-    /// Sends a batch of events to POST /api/v1/analytics/events/batch
+    /// Sends a batch of events to POST /api/v1/sdk/events/batch
     func sendBatch(_ events: [SlnkaEvent], workspaceId: String? = nil) async throws -> TransportResponse {
-        let url = "\(baseURL)/api/v1/analytics/events/batch"
+        let url = "\(baseURL)/api/v1/sdk/events/batch"
         let payload = BatchPayload(events: events)
         return try await post(url: url, body: payload, workspaceId: workspaceId)
     }
@@ -129,16 +129,16 @@ final class Transport {
 
     // MARK: - Attribution
 
-    /// Records a multi-touch attribution touchpoint via POST /api/v1/analytics/attribution/touchpoint
+    /// Records a multi-touch attribution touchpoint via POST /api/v1/sdk/attribution/touchpoint
     func sendAttribution(request: AttributionRequestDTO) async throws -> AttributionResponseDTO {
-        let url = "\(baseURL)/api/v1/analytics/attribution/touchpoint"
+        let url = "\(baseURL)/api/v1/sdk/attribution/touchpoint"
         let data = try await postReturningData(url: url, body: request)
         return try JSONDecoder().decode(AttributionResponseDTO.self, from: data)
     }
 
-    /// Records a conversion event via POST /api/v1/analytics/attribution/conversion
+    /// Records a conversion event via POST /api/v1/sdk/attribution/conversion
     func sendConversion(request: ConversionRequestDTO) async throws {
-        let url = "\(baseURL)/api/v1/analytics/attribution/conversion"
+        let url = "\(baseURL)/api/v1/sdk/attribution/conversion"
         let response = try await post(url: url, body: request)
         if !response.success {
             logDebug("Conversion request failed: HTTP \(response.statusCode)")
@@ -182,10 +182,10 @@ final class Transport {
 
     // MARK: - Feedback
 
-    /// Submits a single feedback response to POST /api/v1/feedback/responses.
+    /// Submits a single feedback response to POST /api/v1/sdk/feedback/responses.
     /// Returns `true` on success.
     func submitFeedbackResponse(_ payload: [String: Any]) async -> Bool {
-        let url = "\(baseURL)/api/v1/feedback/responses"
+        let url = "\(baseURL)/api/v1/sdk/feedback/responses"
 
         guard let urlObj = URL(string: url) else {
             logDebug("Invalid URL: \(url)")
@@ -217,10 +217,10 @@ final class Transport {
         }
     }
 
-    /// Starts a survey response via POST /api/v1/feedback/surveys/responses.
+    /// Starts a survey response via POST /api/v1/sdk/feedback/surveys/responses.
     /// Returns the server-assigned response ID, or `nil` on failure.
     func startSurveyResponse(_ payload: [String: Any]) async -> String? {
-        let url = "\(baseURL)/api/v1/feedback/surveys/responses"
+        let url = "\(baseURL)/api/v1/sdk/feedback/surveys/responses"
 
         guard let urlObj = URL(string: url) else {
             logDebug("Invalid URL: \(url)")
@@ -257,10 +257,10 @@ final class Transport {
         }
     }
 
-    /// Marks a survey response as complete via PUT /api/v1/feedback/surveys/responses/{responseId}/complete.
+    /// Marks a survey response as complete via PUT /api/v1/sdk/feedback/surveys/responses/{responseId}/complete.
     /// Returns `true` on success.
     func completeSurveyResponse(responseId: String) async -> Bool {
-        let url = "\(baseURL)/api/v1/feedback/surveys/responses/\(responseId)/complete"
+        let url = "\(baseURL)/api/v1/sdk/feedback/surveys/responses/\(responseId)/complete"
 
         guard let urlObj = URL(string: url) else {
             logDebug("Invalid URL: \(url)")
@@ -476,7 +476,7 @@ struct DeferredMatchResponseDTO: Codable {
     let contextId: String?
 }
 
-/// Request DTO for POST /api/v1/analytics/attribution/conversion
+/// Request DTO for POST /api/v1/sdk/attribution/conversion
 struct ConversionRequestDTO: Codable {
     let visitorId: String
     let conversionEvent: String
@@ -485,7 +485,7 @@ struct ConversionRequestDTO: Codable {
     let attributionModel: String
 }
 
-/// Request DTO for POST /api/v1/analytics/attribution/touchpoint
+/// Request DTO for POST /api/v1/sdk/attribution/touchpoint
 struct AttributionRequestDTO: Codable {
     let visitorId: String
     let linkId: String?
@@ -497,7 +497,7 @@ struct AttributionRequestDTO: Codable {
     let fingerprint: FingerprintDTO?
 }
 
-/// Response DTO from POST /api/v1/analytics/attribution/touchpoint
+/// Response DTO from POST /api/v1/sdk/attribution/touchpoint
 struct AttributionResponseDTO: Codable {
     let id: String?
     let linkId: String?
