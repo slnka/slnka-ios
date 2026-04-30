@@ -391,7 +391,7 @@ final class Transport {
         request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue(apiKey, forHTTPHeaderField: "X-API-Key")
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue("SlnkaSDK-iOS/\(SlnkaConfig.sdkVersion)", forHTTPHeaderField: "User-Agent")
 
         if let workspaceId = workspaceId {
