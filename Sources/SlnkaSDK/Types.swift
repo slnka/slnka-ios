@@ -55,6 +55,7 @@ public struct SlnkaEvent: Codable, Sendable {
     public let context: [String: AnyCodable]
     public let timestamp: String
     public let sessionId: String?
+    public let platform: String
 
     public init(
         eventName: String,
@@ -73,6 +74,7 @@ public struct SlnkaEvent: Codable, Sendable {
         self.properties = properties.mapValues { AnyCodable($0) }
         self.context = context.mapValues { AnyCodable($0) }
         self.sessionId = sessionId
+        self.platform = "IOS"
 
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]

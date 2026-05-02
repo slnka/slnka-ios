@@ -131,6 +131,16 @@ public final class Slnka {
         // Register for app lifecycle notifications
         sdk.registerLifecycleObservers()
 
+        // Emit lifecycle events to match Android SDK parity.
+        // $app_installed fires once, the very first time the SDK is configured on this device.
+        if let storage = sdk.storage, storage.isFirstLaunch() {
+            sdk.track(
+                event: "$app_installed",
+                properties: ["sdk_version": SlnkaConfig.sdkVersion])
+        }
+        // $app_opened fires on every SDK configure (= every cold start).
+        sdk.track(event: "$app_opened")
+
         // Auto-check deferred deep link if callback is already registered
         sdk.autoDeferredCheckIfReady()
     }
@@ -719,11 +729,21 @@ public final class Slnka {
         }
 
         NotificationCenter.default.addObserver(
+            forName: UIApplication.didBecomeActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.logDebug("App became active, tracking $app_foregrounded")
+            self?.track(event: "$app_foregrounded")
+        }
+
+        NotificationCenter.default.addObserver(
             forName: UIApplication.didEnterBackgroundNotification,
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.logDebug("App entered background, flushing events")
+            self?.logDebug("App entered background, tracking $app_backgrounded + flushing events")
+            self?.track(event: "$app_backgrounded")
             self?.flush()
         }
 

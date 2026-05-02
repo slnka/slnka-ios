@@ -18,6 +18,8 @@ final class SlnkaStorage {
         static let sessionStartTime = "__slnka_session_start"
         static let userTraits = "__slnka_user_traits"
         static let consentGranted = "__slnka_consent_granted"
+        static let firstLaunch = "__slnka_first_launch"
+        static let installTimestamp = "__slnka_install_timestamp"
     }
 
     // MARK: - Init
@@ -236,6 +238,30 @@ final class SlnkaStorage {
     private func remove(_ key: String) {
         queue.async(flags: .barrier) { [defaults] in
             defaults.removeObject(forKey: key)
+        }
+    }
+
+    // MARK: - First Launch Detection
+
+    /// Returns true the first time it is called for a given install, false on subsequent calls.
+    /// Mirrors Android Storage.kt isFirstLaunch() behavior.
+    func isFirstLaunch() -> Bool {
+        let alreadyLaunched = queue.sync { defaults.bool(forKey: Keys.firstLaunch) }
+        if !alreadyLaunched {
+            queue.async(flags: .barrier) { [defaults] in
+                defaults.set(true, forKey: Keys.firstLaunch)
+                defaults.set(Date().timeIntervalSince1970, forKey: Keys.installTimestamp)
+            }
+            return true
+        }
+        return false
+    }
+
+    /// Returns the install timestamp (seconds since epoch), or nil if SDK never tracked first launch.
+    func getInstallTimestamp() -> TimeInterval? {
+        return queue.sync {
+            let v = defaults.double(forKey: Keys.installTimestamp)
+            return v > 0 ? v : nil
         }
     }
 }
