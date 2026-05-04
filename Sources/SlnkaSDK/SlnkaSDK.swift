@@ -81,12 +81,17 @@ public final class Slnka {
     ///   - apiKey: Your SLNK API key (format: `lsk_live_*` or `lsk_test_*`).
     ///   - config: Optional SDK configuration.
     public static func configure(apiKey: String, config: SlnkaConfig) {
+        let sdk = shared
+        guard !sdk.isConfigured else {
+            // SDK already configured — ignore redundant calls to preserve anonymous_id persistence
+            return
+        }
+
         guard validateApiKey(apiKey) else {
             print("[SlnkaSDK] Invalid API key format. Expected lsk_live_* or lsk_test_*.")
             return
         }
 
-        let sdk = shared
         sdk.apiKeyValue = apiKey
         sdk.config = config
         sdk.storage = SlnkaStorage()

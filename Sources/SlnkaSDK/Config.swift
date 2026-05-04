@@ -67,7 +67,7 @@ public struct SlnkaConfig: Sendable {
     public let behaviorMaxQueueSize: Int
 
     /// SDK version string, sent as context metadata.
-    public static let sdkVersion = "1.0.0-beta.7"
+    public static let sdkVersion = "1.0.0-beta.8"
 
     /// Platform identifier sent to the server.
     public static let platform = "ios"
