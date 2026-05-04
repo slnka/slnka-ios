@@ -834,10 +834,16 @@ public final class Slnka {
     }
 
     /// Returns the active session ID, or `nil` if the SDK is not configured.
-    /// Modifiers drop the event silently when this returns `nil`.
+    /// Public so that callers polling server-driven feedback prompts can
+    /// pass the same session id the SDK uses for rage_click events.
+    public func getSessionId() -> String? {
+        guard isConfigured else { return nil }
+        return storage?.getSessionId()
+    }
+
+    /// Internal alias kept for the modifiers and existing call sites.
     static func getCurrentSessionId() -> String? {
-        guard shared.isConfigured else { return nil }
-        return shared.storage?.getSessionId()
+        return shared.getSessionId()
     }
 
     /// Returns the persisted anonymous ID, or `nil` if storage is not ready.
