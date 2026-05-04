@@ -334,14 +334,25 @@ public class SlnkaFeedbackViewController: UIViewController {
         currentRow.alignment = .center
         stack.addArrangedSubview(currentRow)
 
-        let sortedOptions = (options.options ?? [:]).sorted { $0.key < $1.key }
-        for (index, entry) in sortedOptions.enumerated() {
-            let chip = makeChipButton(title: entry.value, value: entry.key, tag: index)
+        // Two accepted shapes: server-driven `choices: [String]` (each item is
+        // its own analytic key + display label) OR legacy `options: [key: label]`.
+        // `choices` wins when both are set.
+        let pairs: [(key: String, label: String)]
+        if let choices = options.choices, !choices.isEmpty {
+            pairs = choices.map { ($0, $0) }
+        } else {
+            pairs = (options.options ?? [:])
+                .sorted { $0.key < $1.key }
+                .map { ($0.key, $0.value) }
+        }
+
+        for (index, entry) in pairs.enumerated() {
+            let chip = makeChipButton(title: entry.label, value: entry.key, tag: index)
             chip.addTarget(self, action: #selector(chipTapped(_:)), for: .touchUpInside)
             currentRow.addArrangedSubview(chip)
 
             // Wrap every 3 chips
-            if (index + 1) % 3 == 0 && index < sortedOptions.count - 1 {
+            if (index + 1) % 3 == 0 && index < pairs.count - 1 {
                 currentRow = UIStackView()
                 currentRow.axis = .horizontal
                 currentRow.spacing = 8

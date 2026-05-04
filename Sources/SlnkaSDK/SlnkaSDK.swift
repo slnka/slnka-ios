@@ -561,6 +561,13 @@ public final class Slnka {
             return
         }
 
+        // Server-driven fatigue cap: when the caller resolved the prompt config
+        // from the dashboard (e.g. via /api/v1/sdk/feedback/prompts/check), the
+        // `maxPerWeek` field overrides the conservative default of 2.
+        if let cap = options.maxPerWeek, cap > 0 {
+            feedbackManager?.serverMaxPerWeek = cap
+        }
+
         guard let manager = feedbackManager, manager.canShowPrompt() else {
             logDebug("Feedback fatigue limit reached, ignoring showFeedback")
             return
@@ -575,7 +582,8 @@ public final class Slnka {
                     promptType: options.promptType.rawValue,
                     question: options.question,
                     value: value,
-                    pageUrl: options.trigger,
+                    pageUrl: nil,
+                    triggerName: options.trigger,
                     metadata: options.metadata
                 )
             }

@@ -10,8 +10,15 @@ final class FeedbackManager {
     private let storage: SlnkaStorage
     private let debug: Bool
 
-    /// Maximum prompts allowed per calendar week.
-    private let maxPromptsPerWeek = 2
+    /// Conservative client-side default. Overridden when a poll cycle (or a
+    /// direct `showFeedback` caller) supplies a server-driven cap via
+    /// `serverMaxPerWeek`.
+    private let defaultMaxPromptsPerWeek = 2
+
+    /// Server-driven fatigue cap captured by the most recent poll cycle (or
+    /// set by an explicit caller). When non-nil, this overrides
+    /// `defaultMaxPromptsPerWeek` in `canShowPrompt()`.
+    var serverMaxPerWeek: Int?
 
     init(transport: Transport, storage: SlnkaStorage, debug: Bool = false) {
         self.transport = transport
@@ -22,11 +29,14 @@ final class FeedbackManager {
     // MARK: - Fatigue
 
     /// Returns `true` if a prompt can be shown without exceeding the weekly limit.
+    /// The cap is the server-driven `serverMaxPerWeek` when set, otherwise the
+    /// conservative default of 2.
     func canShowPrompt() -> Bool {
         let weekKey = currentWeekKey()
         let count = storage.getInt(forKey: weekKey)
-        let allowed = count < maxPromptsPerWeek
-        logDebug("Fatigue check: \(count)/\(maxPromptsPerWeek) this week (\(weekKey)) -> \(allowed ? "allowed" : "blocked")")
+        let cap = serverMaxPerWeek ?? defaultMaxPromptsPerWeek
+        let allowed = count < cap
+        logDebug("Fatigue check: \(count)/\(cap) this week (\(weekKey)) -> \(allowed ? "allowed" : "blocked")")
         return allowed
     }
 
@@ -41,31 +51,45 @@ final class FeedbackManager {
     // MARK: - Single Feedback Response
 
     /// Submits a single feedback response to POST /api/v1/sdk/feedback/responses.
+    /// Payload shape matches the backend `SubmitResponseRequest` DTO (camelCase
+    /// fields, flat — no nested `context` block, scalar value split across
+    /// `responseValue` (string) and `responseScore` (int) per the column types
+    /// in `feedback.feedback_responses`).
     func submitResponse(
         promptType: String,
         question: String,
         value: Any,
         pageUrl: String?,
+        triggerName: String? = nil,
         metadata: [String: Any]?
     ) async {
+        let normalized = normalizeValue(value)
+        let isNumeric = normalized is Int || normalized is Double || normalized is NSNumber
         var payload: [String: Any] = [
-            "prompt_type": promptType,
+            "promptType": promptType,
             "question": question,
-            "value": normalizeValue(value),
-            "anonymous_id": storage.getOrCreateAnonymousId(),
+            "anonymousId": storage.getOrCreateAnonymousId(),
             "timestamp": iso8601Now()
         ]
-
-        if let pageUrl = pageUrl {
-            payload["page_url"] = pageUrl
+        if isNumeric {
+            payload["responseScore"] = normalized
+        } else {
+            payload["responseValue"] = String(describing: normalized)
         }
-
+        if let sessionId = storage.getSessionId() {
+            payload["sessionId"] = sessionId
+        }
+        if let triggerName = triggerName {
+            payload["triggerName"] = triggerName
+        }
+        if let pageUrl = pageUrl {
+            payload["pageUrl"] = pageUrl
+        }
         if let metadata = metadata {
             payload["metadata"] = metadata
         }
-
         if let userId = storage.getUserId() {
-            payload["user_id"] = userId
+            payload["userId"] = userId
         }
 
         let success = await transport.submitFeedbackResponse(payload)
@@ -78,9 +102,9 @@ final class FeedbackManager {
     /// Returns the server-assigned response ID, or `nil` on failure.
     func startSurveyResponse(surveyId: String) async -> String? {
         let payload: [String: Any] = [
-            "survey_id": surveyId,
-            "anonymous_id": storage.getOrCreateAnonymousId(),
-            "session_id": storage.getSessionId() ?? "unknown",
+            "surveyId": surveyId,
+            "anonymousId": storage.getOrCreateAnonymousId(),
+            "sessionId": storage.getSessionId() ?? "unknown",
             "timestamp": iso8601Now()
         ]
 
@@ -90,6 +114,7 @@ final class FeedbackManager {
     }
 
     /// Submits an answer for a single survey step.
+    /// Same flat camelCase shape as `submitResponse` (see comment there).
     func submitSurveyStepAnswer(
         responseId: String,
         promptConfigId: String,
@@ -97,15 +122,27 @@ final class FeedbackManager {
         question: String,
         value: Any
     ) async {
-        let payload: [String: Any] = [
-            "survey_response_id": responseId,
-            "prompt_config_id": promptConfigId,
-            "prompt_type": promptType,
+        let normalized = normalizeValue(value)
+        let isNumeric = normalized is Int || normalized is Double || normalized is NSNumber
+        var payload: [String: Any] = [
+            "surveyResponseId": responseId,
+            "promptConfigId": promptConfigId,
+            "promptType": promptType,
             "question": question,
-            "value": normalizeValue(value),
-            "anonymous_id": storage.getOrCreateAnonymousId(),
+            "anonymousId": storage.getOrCreateAnonymousId(),
             "timestamp": iso8601Now()
         ]
+        if isNumeric {
+            payload["responseScore"] = normalized
+        } else {
+            payload["responseValue"] = String(describing: normalized)
+        }
+        if let sessionId = storage.getSessionId() {
+            payload["sessionId"] = sessionId
+        }
+        if let userId = storage.getUserId() {
+            payload["userId"] = userId
+        }
 
         let success = await transport.submitFeedbackResponse(payload)
         logDebug("Submit survey step answer (response=\(responseId), step=\(promptConfigId)): \(success ? "OK" : "FAILED")")

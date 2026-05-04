@@ -31,11 +31,24 @@ public struct FeedbackShowOptions {
     /// The question to display to the user.
     public let question: String
 
-    /// Key-value options for chip-type prompts.
+    /// Chip choices for `.chips` prompts.
+    /// - Server-driven flow (polling): the backend sends
+    ///   `{"choices": ["A", "B", "C"]}`, normalized into this array.
+    /// - Direct callers may also pass an array of labels.
+    public let choices: [String]?
+
+    /// Legacy key-value options for chip-type prompts. When `choices` is set
+    /// it takes precedence; this map is kept for backwards compatibility with
+    /// callers that bind a stable analytics key to a display label.
     public let options: [String: String]?
 
     /// An optional trigger identifier (e.g., "post_purchase").
     public let trigger: String?
+
+    /// Server-driven fatigue cap. When set, overrides the SDK's conservative
+    /// default of 2 prompts per ISO week (matches the `maxPerWeek` field of
+    /// `feedback.prompt_configs`).
+    public let maxPerWeek: Int?
 
     /// Optional metadata attached to the response.
     public let metadata: [String: Any]?
@@ -43,14 +56,18 @@ public struct FeedbackShowOptions {
     public init(
         promptType: FeedbackPromptType,
         question: String,
+        choices: [String]? = nil,
         options: [String: String]? = nil,
         trigger: String? = nil,
+        maxPerWeek: Int? = nil,
         metadata: [String: Any]? = nil
     ) {
         self.promptType = promptType
         self.question = question
+        self.choices = choices
         self.options = options
         self.trigger = trigger
+        self.maxPerWeek = maxPerWeek
         self.metadata = metadata
     }
 }
