@@ -94,14 +94,13 @@ private struct SlnkaDetectRageModifier: ViewModifier {
                 }
             )
             .onPreferenceChange(SlnkaSizePreferenceKey.self) { self.size = $0 }
-            // DragGesture(minimumDistance: 0) is the iOS 15-compatible
-            // equivalent of `SpatialTapGesture` (iOS 16+).
-            .simultaneousGesture(
-                DragGesture(minimumDistance: 0)
-                    .onEnded { value in
-                        handleTap(at: value.startLocation)
-                    }
-            )
+            // SpatialTapGesture (iOS 16+) attached as a simultaneous gesture
+            // fires alongside the underlying Button tap recognizer instead of
+            // racing against it like DragGesture(minimumDistance: 0) used to.
+            // The detector is iOS 17+ in practice (matches the bank-demo
+            // deployment target); pre-iOS-16 hosts simply lose rage detection
+            // — a graceful degradation that keeps the Button working.
+            .modifier(SpatialTapHandler { location in handleTap(at: location) })
             .onDisappear { buffer.reset() }
     }
 
@@ -200,5 +199,23 @@ private struct SlnkaDetectRageModifier: ViewModifier {
         )
 
         Slnka.behaviorEventQueue?.emit(.rage(event))
+    }
+}
+
+/// Wraps the iOS-version dispatch for spatial tap capture in one place so
+/// `SlnkaDetectRageModifier` body stays linear. iOS 16+ uses
+/// `SpatialTapGesture`; older hosts skip detection silently.
+private struct SpatialTapHandler: ViewModifier {
+    let onTap: (CGPoint) -> Void
+
+    func body(content: Content) -> some View {
+        if #available(iOS 16.0, macOS 13.0, *) {
+            content.simultaneousGesture(
+                SpatialTapGesture(coordinateSpace: .local)
+                    .onEnded { value in onTap(value.location) }
+            )
+        } else {
+            content
+        }
     }
 }
