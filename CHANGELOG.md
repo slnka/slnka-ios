@@ -5,6 +5,24 @@ All notable changes to the SLNK iOS SDK are documented in this file.
 The format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0-beta.10] - 2026-05-04
+
+### Fixed
+
+- **Rage tap detector** : `slnkaDetectRage` switched from
+  `DragGesture(minimumDistance: 0)` to `SpatialTapGesture` (iOS 16+).
+  `DragGesture` was racing the underlying `Button` recognizer and silently
+  killing rage emission on host buttons; `SpatialTapGesture` attaches as a
+  simultaneous gesture and fires reliably alongside the Button tap.
+  Pre-iOS-16 hosts gracefully skip detection.
+
+### Notes
+
+- `extractShortCode` already supports both 7-char NanoID short codes and
+  3–50-char custom aliases (`^[a-zA-Z0-9_-]{3,50}$`), so deep links with
+  custom aliases (e.g. `demobank.recette.slnk.ma/uniqueUsage`) resolve
+  correctly. Documenting here for parity with the Android beta.11 fix.
+
 ## [1.0.0-beta.7] - 2026-05-04
 
 ### Added — Mobile behavior tracking (US-833 / US-834 / US-835 / US-836)
