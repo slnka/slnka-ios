@@ -142,6 +142,178 @@ struct ConsentDataRequest: Codable {
     let sdkVersion: String
 }
 
+// MARK: - Mobile Behavior Tracking (US-833 / US-834 / US-835 / US-836)
+
+/// Tap (click) event captured by `View.slnkaTrackTaps(_:)`.
+///
+/// Coordinates are normalized in `[0.0, 1.0]` relative to the bounded view so
+/// that tap heatmaps remain stable across screen sizes / orientations.
+///
+/// `screenWidth` / `screenHeight` are the **view** dimensions in points
+/// (NOT the device screen) — they are useful for replay debugging only.
+public struct MobileTapEvent: Sendable {
+    public let eventId: String
+    public let eventTime: Date
+    public let sessionId: String
+    public let userId: String?
+    public let anonymousId: String
+    public let screenName: String
+    public let composableId: String
+    public let xNormalized: Float
+    public let yNormalized: Float
+    public let screenWidth: Int
+    public let screenHeight: Int
+    public let screenDensity: Float
+    public let platform: String = "ios"
+    public let appVersion: String?
+    public let osVersion: String?
+    public let deviceModel: String?
+
+    public init(
+        eventId: String,
+        eventTime: Date,
+        sessionId: String,
+        userId: String?,
+        anonymousId: String,
+        screenName: String,
+        composableId: String,
+        xNormalized: Float,
+        yNormalized: Float,
+        screenWidth: Int,
+        screenHeight: Int,
+        screenDensity: Float,
+        appVersion: String?,
+        osVersion: String?,
+        deviceModel: String?
+    ) {
+        self.eventId = eventId
+        self.eventTime = eventTime
+        self.sessionId = sessionId
+        self.userId = userId
+        self.anonymousId = anonymousId
+        self.screenName = screenName
+        self.composableId = composableId
+        self.xNormalized = xNormalized
+        self.yNormalized = yNormalized
+        self.screenWidth = screenWidth
+        self.screenHeight = screenHeight
+        self.screenDensity = screenDensity
+        self.appVersion = appVersion
+        self.osVersion = osVersion
+        self.deviceModel = deviceModel
+    }
+}
+
+/// Scroll-depth checkpoint event (US-835). Emitted when the user crosses a
+/// 25 % / 50 % / 75 % / 90 % / 100 % scroll milestone on a tracked container.
+public struct MobileScrollEvent: Sendable {
+    public let eventId: String
+    public let eventTime: Date
+    public let sessionId: String
+    public let userId: String?
+    public let anonymousId: String
+    public let screenName: String
+    public let composableId: String
+    public let depthPercent: Int
+    public let timeOnScreenMs: Int64
+    public let platform: String = "ios"
+    public let appVersion: String?
+    public let osVersion: String?
+    public let deviceModel: String?
+
+    public init(
+        eventId: String,
+        eventTime: Date,
+        sessionId: String,
+        userId: String?,
+        anonymousId: String,
+        screenName: String,
+        composableId: String,
+        depthPercent: Int,
+        timeOnScreenMs: Int64,
+        appVersion: String?,
+        osVersion: String?,
+        deviceModel: String?
+    ) {
+        self.eventId = eventId
+        self.eventTime = eventTime
+        self.sessionId = sessionId
+        self.userId = userId
+        self.anonymousId = anonymousId
+        self.screenName = screenName
+        self.composableId = composableId
+        self.depthPercent = depthPercent
+        self.timeOnScreenMs = timeOnScreenMs
+        self.appVersion = appVersion
+        self.osVersion = osVersion
+        self.deviceModel = deviceModel
+    }
+}
+
+/// Rage-tap event (US-834). Emitted when N taps land within `clusterRadiusDp`
+/// of each other within `timeSpanMs`.
+public struct MobileRageEvent: Sendable {
+    public let eventId: String
+    public let eventTime: Date
+    public let sessionId: String
+    public let userId: String?
+    public let anonymousId: String
+    public let screenName: String
+    public let composableId: String
+    public let tapCount: Int
+    public let timeSpanMs: Int64
+    public let clusterRadiusDp: Int
+    public let centerX: Float
+    public let centerY: Float
+    public let platform: String = "ios"
+    public let appVersion: String?
+    public let osVersion: String?
+    public let deviceModel: String?
+
+    public init(
+        eventId: String,
+        eventTime: Date,
+        sessionId: String,
+        userId: String?,
+        anonymousId: String,
+        screenName: String,
+        composableId: String,
+        tapCount: Int,
+        timeSpanMs: Int64,
+        clusterRadiusDp: Int,
+        centerX: Float,
+        centerY: Float,
+        appVersion: String?,
+        osVersion: String?,
+        deviceModel: String?
+    ) {
+        self.eventId = eventId
+        self.eventTime = eventTime
+        self.sessionId = sessionId
+        self.userId = userId
+        self.anonymousId = anonymousId
+        self.screenName = screenName
+        self.composableId = composableId
+        self.tapCount = tapCount
+        self.timeSpanMs = timeSpanMs
+        self.clusterRadiusDp = clusterRadiusDp
+        self.centerX = centerX
+        self.centerY = centerY
+        self.appVersion = appVersion
+        self.osVersion = osVersion
+        self.deviceModel = deviceModel
+    }
+}
+
+/// Sealed type carried by the ``BehaviorEventQueue``. Backend distinguishes
+/// payloads via the `eventType` discriminator in the JSON envelope (`"click"`,
+/// `"scroll"`, `"rage"`).
+public enum MobileBehaviorEvent: Sendable {
+    case tap(MobileTapEvent)
+    case scroll(MobileScrollEvent)
+    case rage(MobileRageEvent)
+}
+
 // MARK: - AnyCodable
 
 /// A type-erased `Codable` wrapper for heterogeneous dictionaries.

@@ -180,6 +180,69 @@ final class Transport {
         return try JSONDecoder().decode(InstallAttributionResponseDTO.self, from: data)
     }
 
+    // MARK: - Mobile Behavior
+
+    /// Sends a batch of mobile behavior events (taps / scroll-depth / rage)
+    /// to `POST /api/v1/analytics/events/mobile/batch`.
+    ///
+    /// Wire format mirrors the Android SDK: each event is wrapped in an
+    /// envelope carrying an `eventType` discriminator (`"click"`, `"scroll"`,
+    /// `"rage"`) and the corresponding payload field. Backend
+    /// (US-826/827/828) splits the batch and routes each event to the proper
+    /// ClickHouse writer.
+    func sendMobileBehaviorBatch(_ events: [MobileBehaviorEvent]) async throws {
+        let url = "\(baseURL)/api/v1/analytics/events/mobile/batch"
+        guard let urlObj = URL(string: url) else {
+            throw SlnkaError.invalidURL(url)
+        }
+
+        let envelopes = events.map(Self.toEnvelope)
+        let payload = MobileBehaviorBatchPayload(events: envelopes)
+
+        var request = buildRequest(url: urlObj, method: "POST")
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        request.httpBody = try encoder.encode(payload)
+
+        logDebug("POST \(url) (mobile behavior, \(events.count) events)")
+
+        let (data, response) = try await session.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw SlnkaError.invalidResponse(statusCode: 0, body: nil)
+        }
+        guard (200...299).contains(httpResponse.statusCode) else {
+            let body = String(data: data, encoding: .utf8)
+            if httpResponse.statusCode == 429 { throw SlnkaError.rateLimited }
+            throw SlnkaError.invalidResponse(statusCode: httpResponse.statusCode, body: body)
+        }
+    }
+
+    private static func toEnvelope(_ event: MobileBehaviorEvent) -> MobileBehaviorEnvelopeDTO {
+        switch event {
+        case .tap(let t):
+            return MobileBehaviorEnvelopeDTO(
+                eventType: "click",
+                click: MobileTapDTO(from: t),
+                scroll: nil,
+                rage: nil
+            )
+        case .scroll(let s):
+            return MobileBehaviorEnvelopeDTO(
+                eventType: "scroll",
+                click: nil,
+                scroll: MobileScrollDTO(from: s),
+                rage: nil
+            )
+        case .rage(let r):
+            return MobileBehaviorEnvelopeDTO(
+                eventType: "rage",
+                click: nil,
+                scroll: nil,
+                rage: MobileRageDTO(from: r)
+            )
+        }
+    }
+
     // MARK: - Feedback
 
     /// Submits a single feedback response to POST /api/v1/sdk/feedback/responses.
@@ -523,4 +586,127 @@ struct InstallAttributionResponseDTO: Codable {
     let linkId: String
     let confidence: Double
     let method: String
+}
+
+// MARK: - Mobile Behavior DTOs
+
+/// Top-level batch payload for `POST /api/v1/analytics/events/mobile/batch`.
+struct MobileBehaviorBatchPayload: Codable {
+    let events: [MobileBehaviorEnvelopeDTO]
+}
+
+/// Polymorphic envelope: `eventType` discriminator + matching optional payload.
+struct MobileBehaviorEnvelopeDTO: Codable {
+    let eventType: String
+    let click: MobileTapDTO?
+    let scroll: MobileScrollDTO?
+    let rage: MobileRageDTO?
+}
+
+struct MobileTapDTO: Codable {
+    let eventId: String
+    let eventTime: Date
+    let sessionId: String
+    let userId: String?
+    let anonymousId: String
+    let screenName: String
+    let composableId: String
+    let xNormalized: Float
+    let yNormalized: Float
+    let screenWidth: Int
+    let screenHeight: Int
+    let screenDensity: Float
+    let platform: String
+    let appVersion: String?
+    let osVersion: String?
+    let deviceModel: String?
+
+    init(from e: MobileTapEvent) {
+        eventId = e.eventId
+        eventTime = e.eventTime
+        sessionId = e.sessionId
+        userId = e.userId
+        anonymousId = e.anonymousId
+        screenName = e.screenName
+        composableId = e.composableId
+        xNormalized = e.xNormalized
+        yNormalized = e.yNormalized
+        screenWidth = e.screenWidth
+        screenHeight = e.screenHeight
+        screenDensity = e.screenDensity
+        platform = e.platform
+        appVersion = e.appVersion
+        osVersion = e.osVersion
+        deviceModel = e.deviceModel
+    }
+}
+
+struct MobileScrollDTO: Codable {
+    let eventId: String
+    let eventTime: Date
+    let sessionId: String
+    let userId: String?
+    let anonymousId: String
+    let screenName: String
+    let composableId: String
+    let depthPercent: Int
+    let timeOnScreenMs: Int64
+    let platform: String
+    let appVersion: String?
+    let osVersion: String?
+    let deviceModel: String?
+
+    init(from e: MobileScrollEvent) {
+        eventId = e.eventId
+        eventTime = e.eventTime
+        sessionId = e.sessionId
+        userId = e.userId
+        anonymousId = e.anonymousId
+        screenName = e.screenName
+        composableId = e.composableId
+        depthPercent = e.depthPercent
+        timeOnScreenMs = e.timeOnScreenMs
+        platform = e.platform
+        appVersion = e.appVersion
+        osVersion = e.osVersion
+        deviceModel = e.deviceModel
+    }
+}
+
+struct MobileRageDTO: Codable {
+    let eventId: String
+    let eventTime: Date
+    let sessionId: String
+    let userId: String?
+    let anonymousId: String
+    let screenName: String
+    let composableId: String
+    let tapCount: Int
+    let timeSpanMs: Int64
+    let clusterRadiusDp: Int
+    let centerX: Float
+    let centerY: Float
+    let platform: String
+    let appVersion: String?
+    let osVersion: String?
+    let deviceModel: String?
+
+    init(from e: MobileRageEvent) {
+        eventId = e.eventId
+        eventTime = e.eventTime
+        sessionId = e.sessionId
+        userId = e.userId
+        anonymousId = e.anonymousId
+        screenName = e.screenName
+        composableId = e.composableId
+        tapCount = e.tapCount
+        timeSpanMs = e.timeSpanMs
+        clusterRadiusDp = e.clusterRadiusDp
+        centerX = e.centerX
+        centerY = e.centerY
+        platform = e.platform
+        appVersion = e.appVersion
+        osVersion = e.osVersion
+        deviceModel = e.deviceModel
+    }
 }

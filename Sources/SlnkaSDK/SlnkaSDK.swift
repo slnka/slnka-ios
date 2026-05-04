@@ -51,6 +51,14 @@ public final class Slnka {
     private var attribution: Attribution?
     private var fingerprint: DeviceFingerprint?
     private var feedbackManager: FeedbackManager?
+    internal var behaviorQueue: BehaviorEventQueue?
+
+    /// Behavior event queue exposed to the SwiftUI behavior modifiers via a
+    /// static accessor (``behaviorEventQueue``). `nil` until ``configure`` is
+    /// called or when all behavior flags are disabled.
+    internal static var behaviorEventQueue: BehaviorEventQueue? {
+        return shared.behaviorQueue
+    }
 
     private var isConfigured = false
 
@@ -107,6 +115,20 @@ public final class Slnka {
             storage: sdk.storage!,
             debug: config.debug
         )
+
+        // Mobile Behavior Tracking (US-833 / US-834 / US-835 / US-836).
+        // Allocate the behavior queue only if at least one tracking flag is
+        // enabled — this keeps the SDK footprint minimal for hosts that
+        // disable behavior capture.
+        if config.enableHeatmaps || config.enableRageDetection || config.enableScrollDepth {
+            sdk.behaviorQueue = BehaviorEventQueue(
+                transport: sdk.transport!,
+                batchSize: config.behaviorBatchSize,
+                flushIntervalMs: config.behaviorFlushIntervalMs,
+                maxQueueSize: config.behaviorMaxQueueSize,
+                debug: config.debug
+            )
+        }
 
         if config.enableAttribution {
             sdk.attribution = Attribution(
@@ -771,6 +793,92 @@ public final class Slnka {
             return false
         }
         return true
+    }
+
+    // MARK: - Behavior Tracking Helpers (internal API for SwiftUI modifiers)
+
+    /// `true` when SDK is configured AND a behavior queue has been created.
+    /// Used by `slnkaTrackTaps` / `slnkaDetectRage` / `slnkaTrackScroll` to
+    /// short-circuit silently if the host app never called `configure()`.
+    static func isConfiguredForBehavior() -> Bool {
+        let sdk = shared
+        return sdk.isConfigured && sdk.behaviorQueue != nil
+    }
+
+    static func isHeatmapsEnabled() -> Bool {
+        guard let cfg = shared.config, shared.behaviorQueue != nil else { return false }
+        return cfg.enableHeatmaps
+    }
+
+    static func isRageDetectionEnabled() -> Bool {
+        guard let cfg = shared.config, shared.behaviorQueue != nil else { return false }
+        return cfg.enableRageDetection
+    }
+
+    static func isScrollDepthEnabled() -> Bool {
+        guard let cfg = shared.config, shared.behaviorQueue != nil else { return false }
+        return cfg.enableScrollDepth
+    }
+
+    /// Returns the active session ID, or `nil` if the SDK is not configured.
+    /// Modifiers drop the event silently when this returns `nil`.
+    static func getCurrentSessionId() -> String? {
+        guard shared.isConfigured else { return nil }
+        return shared.storage?.getSessionId()
+    }
+
+    /// Returns the persisted anonymous ID, or `nil` if storage is not ready.
+    static func getAnonymousIdSafe() -> String? {
+        guard shared.isConfigured else { return nil }
+        return shared.storage?.getOrCreateAnonymousId()
+    }
+
+    /// Returns whether analytics consent has been granted. Modifiers MUST
+    /// gate emission on this — same contract as `EventTracker`.
+    static func isConsentGrantedSafe() -> Bool {
+        guard shared.isConfigured else { return false }
+        return shared.storage?.isConsentGranted() ?? false
+    }
+
+    /// Compact UUID-derived suffix used to build event IDs that mirror the
+    /// Android format `tap_<16hex>` / `rage_<16hex>` / `scrl_<16hex>`.
+    static func shortId() -> String {
+        let raw = UUID().uuidString.replacingOccurrences(of: "-", with: "").lowercased()
+        return String(raw.prefix(16))
+    }
+
+    /// Screen scale (a.k.a. density). On macOS or in headless tests, falls
+    /// back to `1.0`.
+    static func getScreenDensity() -> CGFloat {
+        #if canImport(UIKit)
+        return UIScreen.main.scale
+        #else
+        return 1.0
+        #endif
+    }
+
+    /// CFBundleShortVersionString of the host app, or `nil`.
+    static func getAppVersionSafe() -> String? {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+    }
+
+    /// `"iOS <version>"` / `"macOS <version>"` for context metadata.
+    static func getOsVersionSafe() -> String? {
+        #if canImport(UIKit)
+        return "iOS \(UIDevice.current.systemVersion)"
+        #else
+        let v = ProcessInfo.processInfo.operatingSystemVersion
+        return "macOS \(v.majorVersion).\(v.minorVersion).\(v.patchVersion)"
+        #endif
+    }
+
+    /// Generic device model identifier.
+    static func getDeviceModelSafe() -> String? {
+        #if canImport(UIKit)
+        return UIDevice.current.model
+        #else
+        return "Mac"
+        #endif
     }
 
     // MARK: - Logging

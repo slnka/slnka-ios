@@ -40,8 +40,34 @@ public struct SlnkaConfig: Sendable {
     /// Default: `false`
     public let debug: Bool
 
+    // MARK: - Mobile Behavior Tracking (US-833 / US-834 / US-835 / US-836)
+
+    /// Enable heatmap (tap) capture via `View.slnkaTrackTaps(_:)`.
+    /// Default: `true`
+    public let enableHeatmaps: Bool
+
+    /// Enable rage-tap detection (US-834) via `View.slnkaDetectRage(_:)`.
+    /// Default: `true`
+    public let enableRageDetection: Bool
+
+    /// Enable scroll-depth capture (US-835) via `View.slnkaTrackScroll(_:)`.
+    /// Default: `true`
+    public let enableScrollDepth: Bool
+
+    /// Number of behavior events that triggers an automatic flush.
+    /// Default: `50`
+    public let behaviorBatchSize: Int
+
+    /// Interval in milliseconds between automatic behavior-event flushes.
+    /// Default: `30_000` (30 seconds)
+    public let behaviorFlushIntervalMs: Int
+
+    /// Maximum number of behavior events to keep in memory before dropping the oldest.
+    /// Default: `1000`
+    public let behaviorMaxQueueSize: Int
+
     /// SDK version string, sent as context metadata.
-    public static let sdkVersion = "1.0.0-beta.6"
+    public static let sdkVersion = "1.0.0-beta.7"
 
     /// Platform identifier sent to the server.
     public static let platform = "ios"
@@ -55,7 +81,13 @@ public struct SlnkaConfig: Sendable {
         flushSize: Int = 10,
         maxQueueSize: Int = 1000,
         maxRetries: Int = 3,
-        debug: Bool = false
+        debug: Bool = false,
+        enableHeatmaps: Bool = true,
+        enableRageDetection: Bool = true,
+        enableScrollDepth: Bool = true,
+        behaviorBatchSize: Int = 50,
+        behaviorFlushIntervalMs: Int = 30_000,
+        behaviorMaxQueueSize: Int = 1000
     ) {
         self.serverUrl = serverUrl
         self.enableDeepLinks = enableDeepLinks
@@ -66,5 +98,11 @@ public struct SlnkaConfig: Sendable {
         self.maxQueueSize = maxQueueSize
         self.maxRetries = maxRetries
         self.debug = debug
+        self.enableHeatmaps = enableHeatmaps
+        self.enableRageDetection = enableRageDetection
+        self.enableScrollDepth = enableScrollDepth
+        self.behaviorBatchSize = behaviorBatchSize
+        self.behaviorFlushIntervalMs = behaviorFlushIntervalMs
+        self.behaviorMaxQueueSize = behaviorMaxQueueSize
     }
 }
