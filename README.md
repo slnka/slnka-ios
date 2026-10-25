@@ -14,14 +14,14 @@ into iOS apps.
 
 1. File > Add Package Dependencies
 2. Paste: `https://github.com/slnka/slnka-ios.git`
-3. Dependency Rule: Exact Version, `1.0.0-beta.13`
+3. Dependency Rule: Exact Version, `1.0.0-beta.14`
 4. Add the `SlnkaSDK` product to your target
 
 ### Via Package.swift
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/slnka/slnka-ios.git", exact: "1.0.0-beta.13")
+    .package(url: "https://github.com/slnka/slnka-ios.git", exact: "1.0.0-beta.14")
 ]
 ```
 

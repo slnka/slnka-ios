@@ -22,8 +22,8 @@ let package = Package(
     targets: [
         .binaryTarget(
             name: "SlnkaSDK",
-            url: "https://github.com/slnka/slnka-ios/releases/download/1.0.0-beta.13/SlnkaSDK.xcframework.zip",
-            checksum: "f626cf5d15f0207ac8365ada676cfa7d27cd1a43c718733a0565060f84f97e5c"
+            url: "https://github.com/slnka/slnka-ios/releases/download/1.0.0-beta.14/SlnkaSDK.xcframework.zip",
+            checksum: "dca5d7094b35a29195911d4479cc3d3858a4fdfd7cf1670fbd22b48dd2f460bc"
         )
     ]
 )
